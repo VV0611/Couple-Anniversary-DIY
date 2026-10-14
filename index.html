@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Love Universe 💕</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;700&family=Noto+Serif+SC:wght@200;300;400;500&family=ZCOOL+XiaoWei&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- Splash screen -->
+<div id="splash">
+  <div class="splash-heart">♡</div>
+  <div class="splash-title"><span data-profile="partnerA">Partner A</span> &amp; <span data-profile="partnerB">Partner B</span> ✦</div>
+</div>
+
+<!-- ========================================
+     🔒 PASSWORD GATE (可选。Setup 表单里的密码留空就不会显示这个)
+======================================== -->
+<div id="password-gate" style="display:none">
+    <div class="pw-light pw-light1"></div>
+    <div class="pw-light pw-light2"></div>
+    <div class="pw-stars" id="pw-stars"></div>
+    <div class="pw-box">
+        <div class="pw-deco">✦</div>
+        <p class="pw-hint">Enter to our world</p>
+        <p class="pw-sub">~ ❤</p>
+        <div class="pw-input-wrap">
+            <input id="pw-input" type="password" placeholder="· · · · · ·" maxlength="20" autocomplete="off">
+            <div class="pw-underline"></div>
+        </div>
+        <p id="pw-error">密码不对！再想想 💭</p>
+    </div>
+</div>
+
+<style>
+/* === PASSWORD GATE === */
+#password-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(155deg, #1e0818 0%, #2c1040 38%, #1f0d2c 65%, #261020 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.pw-light { position: absolute; border-radius: 50%; pointer-events: none; }
+.pw-light1 { width: 480px; height: 480px; top: -160px; left: -80px; background: radial-gradient(circle, rgba(255,140,180,0.22), rgba(255,140,180,0)); animation: amb1 18s ease-in-out infinite; }
+.pw-light2 { width: 420px; height: 420px; bottom: -80px; right: -60px; background: radial-gradient(circle, rgba(190,120,255,0.2), rgba(190,120,255,0)); animation: amb2 22s ease-in-out infinite; }
+.pw-stars { position: absolute; inset: 0; pointer-events: none; }
+.pw-box { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 52px 56px 48px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 24px; backdrop-filter: blur(12px); box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07); animation: fadeUp 0.8s ease both; }
+.pw-deco { font-size: 1.5rem; color: #ffdca8; opacity: 0.8; animation: breathe 3s ease-in-out infinite; margin-bottom: 4px; }
+.pw-hint { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 400; font-style: italic; color: #fff7fc; letter-spacing: 0.06em; line-height: 1; }
+.pw-sub { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; color: rgba(255, 214, 234, 0.6); letter-spacing: 0.12em; margin-top: -6px; }
+.pw-input-wrap { position: relative; margin-top: 10px; }
+#pw-input { background: transparent; border: none; color: #fff7fc; font-size: 2rem; letter-spacing: 0.45em; text-align: center; width: 220px; outline: none; padding: 8px 0 10px; caret-color: #ffd6ea; }
+#pw-input::placeholder { color: rgba(255,255,255,0.18); letter-spacing: 0.3em; font-size: 1rem; }
+.pw-underline { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,214,234,0.5), transparent); transition: background 0.3s; }
+#pw-input:focus ~ .pw-underline { background: linear-gradient(90deg, transparent, rgba(255,180,220,0.9), transparent); box-shadow: 0 0 10px rgba(255,140,180,0.3); }
+#pw-error { font-family: 'Noto Serif SC', serif; font-size: 0.8rem; color: rgba(255, 160, 160, 0.85); letter-spacing: 0.04em; display: none; animation: fadeUp 0.3s ease; }
+
+/* === SETUP MODAL (让用户 key in 自己的资料) === */
+#setup-modal { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; background: rgba(10,5,20,0.82); backdrop-filter: blur(10px); padding: 20px; }
+#setup-modal.open { display: flex; }
+.setup-box { width: min(460px, 100%); max-height: 88vh; overflow-y: auto; background: linear-gradient(160deg,#1e1030,#120a1e); border: 1px solid rgba(255,182,220,0.25); border-radius: 22px; padding: 30px 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.setup-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:#fff7fc; margin-bottom:4px; text-align:center; }
+.setup-hint { font-size:0.78rem; color:rgba(255,214,234,0.55); text-align:center; margin-bottom:20px; }
+.setup-row { display:flex; gap:10px; margin-bottom:12px; }
+.setup-field { flex:1; display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+.setup-field label { font-size:0.72rem; color:rgba(255,214,234,0.7); letter-spacing:0.05em; }
+.setup-field input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:10px 12px; color:#fff7fc; font-size:0.9rem; font-family:inherit; outline:none; }
+.setup-field input:focus { border-color:rgba(255,180,220,0.6); }
+.setup-actions { display:flex; gap:10px; margin-top:18px; }
+.setup-btn { flex:1; padding:11px; border-radius:999px; border:none; cursor:pointer; font-size:0.88rem; font-family:inherit; transition:0.2s; }
+.setup-btn-save { background:linear-gradient(135deg,#ffb7da,#d0adff); color:#2a163d; font-weight:700; }
+.setup-btn-save:hover { transform:translateY(-2px); }
+.setup-btn-cancel { background:rgba(255,255,255,0.08); color:rgba(255,247,252,0.8); }
+.setup-trigger { position: fixed; bottom: 74px; right: 16px; z-index: 90; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,182,220,0.3); background:linear-gradient(135deg,rgba(99,66,159,0.85),rgba(62,39,102,0.85)); color:#fff7fc; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+</style>
+
+<script>
+(function () {
+    var gate  = document.getElementById('password-gate');
+    var input = document.getElementById('pw-input');
+    var error = document.getElementById('pw-error');
+
+    var profile = {};
+    try { profile = JSON.parse(localStorage.getItem('love_profile') || '{}'); } catch (e) {}
+    var CORRECT = profile.password || '';
+
+    // 没设置密码 → 不显示密码门
+    if (!CORRECT) { gate.style.display = 'none'; return; }
+    gate.style.display = 'flex';
+
+    (function () {
+        var container = document.getElementById('pw-stars');
+        for (var i = 0; i < 80; i++) {
+            var s = document.createElement('div');
+            s.style.cssText = [
+                'position:absolute','border-radius:50%',
+                'width:' + (Math.random() * 2.5 + 0.8) + 'px',
+                'height:' + (Math.random() * 2.5 + 0.8) + 'px',
+                'left:' + (Math.random() * 100) + '%',
+                'top:' + (Math.random() * 100) + '%',
+                'background:#fff',
+                'animation:starGlow ' + (Math.random() * 4 + 2) + 's ' + (Math.random() * 5) + 's ease-in-out infinite'
+            ].join(';');
+            container.appendChild(s);
+        }
+    })();
+
+    if (sessionStorage.getItem('unlocked') === '1') {
+        gate.style.display = 'none';
+        return;
+    }
+
+    input.focus();
+
+    input.addEventListener('keydown', function (e) {
+        error.style.display = 'none';
+        if (e.key === 'Enter') check();
+    });
+
+    input.addEventListener('input', function () {
+        if (input.value.length === CORRECT.length) check();
+    });
+
+    function check() {
+        if (input.value === CORRECT) {
+            sessionStorage.setItem('unlocked', '1');
+            gate.style.display = 'none';
+            var splash = document.getElementById('splash');
+            if (splash) {
+                window._loginShowingSplash = true;
+                splash.style.display = 'flex';
+                splash.classList.remove('fade-out');
+                setTimeout(function() {
+                    splash.classList.add('fade-out');
+                    setTimeout(function() {
+                        splash.style.display = 'none';
+                        window._loginShowingSplash = false;
+                    }, 950);
+                }, 1600);
+            }
+        } else {
+            error.style.display = 'block';
+            input.value = '';
+            input.focus();
+        }
+    }
+})();
+</script>
+
+<!-- ========================================
+     ⚙️ SETUP MODAL — 用户在这里 key in 自己的名字/日期/密码
+======================================== -->
+<button class="setup-trigger" onclick="openSetup()" title="Setup / 编辑资料">⚙️</button>
+
+<div id="setup-modal">
+  <div class="setup-box">
+    <div class="setup-title">编辑你们的资料 💕</div>
+    <p class="setup-hint">只存在这个浏览器里，不会上传到任何地方</p>
+
+    <div class="setup-row">
+      <div class="setup-field"><label>Partner A 的名字</label><input id="setup-partnerA" placeholder="e.g. Alex"></div>
+      <div class="setup-field"><label>Partner B 的名字</label><input id="setup-partnerB" placeholder="e.g. Jamie"></div>
+    </div>
+    <div class="setup-row">
+      <div class="setup-field"><label>认识的日期</label><input id="setup-met-date" type="date"></div>
+      <div class="setup-field"><label>在一起的日期</label><input id="setup-together-date" type="date"></div>
+    </div>
+    <div class="setup-field"><label>首页大标题</label><input id="setup-title" placeholder="Happy Anniversary"></div>
+    <div class="setup-field"><label>首页副标题</label><input id="setup-subtitle" placeholder="The day you walked into my life"></div>
+    <div class="setup-field"><label>密码（留空 = 不需要密码）</label><input id="setup-password" placeholder="可选"></div>
+
+    <div class="setup-actions">
+      <button class="setup-btn setup-btn-cancel" onclick="closeSetup()">取消</button>
+      <button class="setup-btn setup-btn-save" onclick="saveSetupForm()">保存并刷新</button>
+    </div>
+
+    <div class="setup-export-wrap">
+      <p class="setup-export-hint">内容都调好了？导出一份"成品"网站，重新部署后发给对方，<br>对方打开看到的就是你改好的内容，不再是空白模板 💕</p>
+      <button class="setup-btn-export" id="export-site-btn" onclick="exportFinalSite()">📦 导出最终版网站</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================
+     🔴 PAGE 1: OPENING PAGE
+======================================== -->
+<section id="opening" class="page active">
+    <div class="light light1"></div>
+    <div class="light light2"></div>
+    <div class="stars" id="opening-stars"></div>
+
+    <h1 id="typing-text">
+        <span class="english"></span>
+        <span class="chinese"></span>
+    </h1>
+    <p class="enter-text">click anywhere to enter our world</p>
+</section>
+
+
+<!-- ========================================
+     🟢 PAGE 2: HOME PAGE
+======================================== -->
+<section id="home" class="page">
+    <div class="light home-light1"></div>
+    <div class="light home-light2"></div>
+    <div class="light home-light3"></div>
+    <div class="stars" id="home-stars"></div>
+    <div class="home-hero-bg" id="home-hero-bg" style="background-image:url('images/photo1.jpg')"></div>
+    <main class="home-content home-shell">
+
+        <header class="home-headline">
+            <h1 class="home-title" data-profile="siteTitle">Happy Anniversary</h1>
+            <p class="home-subtitle" data-profile="subtitle">The day you walked into my life</p>
+        </header>
+
+        <section class="home-media">
+            <div class="photo-card">
+                <div class="hero-main-photo">
+                    <figure class="hero-photo-card photo-upload-slot">
+                        <img src="images/photo1.jpg" class="main-photo" alt="Memory photo 1" id="hero-photo-1" data-photo-key="hero-photo-1">
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷 换照片</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </figure>
+                </div>
+                <div class="day1-wrap">
+                    <figure class="day1-card photo-upload-slot">
+                        <img src="images/photo2.jpg" class="day1-photo" alt="Day 1" id="hero-photo-2" data-photo-key="hero-photo-2">
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                        <div class="day1-label">Day 1 ✦ replace with your date</div>
+                    </figure>
+                    <button class="vinyl-button" id="play-music-btn" type="button" aria-label="Play music"></button>
+                </div>
+            </div>
+        </section>
+
+        <section class="home-metrics">
+            <article class="timer-card timer-main">
+                <h2 class="timer-title">✦ 我们在一起</h2>
+                <div class="timer-display">
+                    <div class="timer-digit"><span id="love-days" class="timer-value">000</span><span class="timer-unit">天</span></div>
+                    <span class="timer-dot">·</span>
+                    <div class="timer-digit"><span id="love-hours" class="timer-value">00</span><span class="timer-unit">时</span></div>
+                    <span class="timer-dot">·</span>
+                    <div class="timer-digit"><span id="love-minutes" class="timer-value">00</span><span class="timer-unit">分</span></div>
+                    <span class="timer-dot">·</span>
+                    <div class="timer-digit"><span id="love-seconds" class="timer-value">00</span><span class="timer-unit">秒</span></div>
+                </div>
+            </article>
+
+            <div class="timer-row-sm">
+                <article class="timer-card timer-sm">
+                    <h2 class="timer-title">我们认识了</h2>
+                    <div class="timer-display">
+                        <div class="timer-digit"><span id="met-days" class="timer-value">000</span><span class="timer-unit">天</span></div>
+                        <span class="timer-dot">·</span>
+                        <div class="timer-digit"><span id="met-hours" class="timer-value">00</span><span class="timer-unit">时</span></div>
+                        <span class="timer-dot">·</span>
+                        <div class="timer-digit"><span id="met-minutes" class="timer-value">00</span><span class="timer-unit">分</span></div>
+                    </div>
+                    <span id="met-seconds" style="display:none"></span>
+                    <p class="timer-sub">since we met ✦</p>
+                </article>
+                <article class="timer-card timer-sm">
+                    <h2 class="timer-title">距离下个周年</h2>
+                    <div class="timer-display">
+                        <div class="timer-digit"><span id="next-anniv-days" class="timer-value">000</span><span class="timer-unit">天</span></div>
+                        <span class="timer-dot">·</span>
+                        <div class="timer-digit"><span id="next-anniv-hours" class="timer-value">00</span><span class="timer-unit">时</span></div>
+                        <span class="timer-dot">·</span>
+                        <div class="timer-digit"><span id="next-anniv-mins" class="timer-value">00</span><span class="timer-unit">分</span></div>
+                    </div>
+                    <p class="timer-sub">see you then ✦</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="today-message">
+            <p id="random-message"></p>
+            <button id="refresh-message-btn" class="refresh-btn">💌 每日一看</button>
+        </section>
+
+    </main>
+</section>
+
+
+<!-- ========================================
+     🔵 PAGE 3: STORY PAGE
+     示例时间线，换成你们自己的故事：复制一个 .timeline-item 改内容即可。
+     tl-highlight / dot-star 是重点事件的高亮样式。
+======================================== -->
+<section id="story" class="page">
+    <div class="light story-light1"></div>
+    <div class="light story-light2"></div>
+    <div class="light story-light3"></div>
+    <div class="stars" id="story-stars"></div>
+    <div class="story-container">
+
+        <h1 class="story-title">我们的故事 ✨</h1>
+        <p class="story-subtitle">从相识到相爱的每一个闪闪时刻</p>
+
+        <div class="timeline">
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <input type="date" class="timeline-date timeline-date-input" data-date-key="story-1" title="选择日期">
+                    <div class="tl-photo-wrap photo-upload-slot">
+                        <figure class="tl-photo polaroid"><img src="images/story1.jpg" alt="故事照片" data-photo-key="story-photo-1" onclick="openLightbox(this.src,'','')"></figure>
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </div>
+                    <div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="story-1-heading">💬 我们怎么认识的</span><br><span class="editable-text" contenteditable="true" data-edit-key="story-1-desc">在这里写下你们第一次遇见的故事</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <input type="date" class="timeline-date timeline-date-input" data-date-key="story-2" title="选择日期">
+                    <div class="tl-photo-wrap photo-upload-slot">
+                        <figure class="tl-photo polaroid"><img src="images/story2.jpg" alt="故事照片" data-photo-key="story-photo-2" onclick="openLightbox(this.src,'','')"></figure>
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </div>
+                    <div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="story-2-heading">🌊 第一次约会</span><br><span class="editable-text" contenteditable="true" data-edit-key="story-2-desc">写下那天发生的事情</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot dot-star"></div>
+                <div class="timeline-content tl-highlight">
+                    <input type="date" class="timeline-date timeline-date-input" data-date-key="story-3" title="选择日期">
+                    <div class="tl-photo-wrap photo-upload-slot">
+                        <figure class="tl-photo polaroid"><img src="images/story3.jpg" alt="故事照片" data-photo-key="story-photo-3" onclick="openLightbox(this.src,'','')"></figure>
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </div>
+                    <div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="story-3-heading">💕 在一起</span><br><span class="editable-text" contenteditable="true" data-edit-key="story-3-desc">我们的故事开始了 ❤️</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <input type="date" class="timeline-date timeline-date-input" data-date-key="story-4" title="选择日期">
+                    <div class="tl-photo-wrap photo-upload-slot">
+                        <figure class="tl-photo polaroid"><img src="images/story4.jpg" alt="故事照片" data-photo-key="story-photo-4" onclick="openLightbox(this.src,'','')"></figure>
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </div>
+                    <div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="story-4-heading">✈️ 一次难忘的旅行</span><br><span class="editable-text" contenteditable="true" data-edit-key="story-4-desc">写下你们一起去过的地方</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot dot-star"></div>
+                <div class="timeline-content tl-highlight tl-anniversary">
+                    <input type="date" class="timeline-date timeline-date-input" data-date-key="story-5" title="选择周年日期">
+                    <div class="tl-photo-wrap photo-upload-slot">
+                        <figure class="tl-photo polaroid"><img src="images/story5.jpg" alt="故事照片" data-photo-key="story-photo-5" onclick="openLightbox(this.src,'','')"></figure>
+                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
+                        <input type="file" accept="image/*" class="photo-upload-input" hidden>
+                    </div>
+                    <div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="story-5-heading">🎉 我们的周年</span><br><span class="editable-text" contenteditable="true" data-edit-key="story-5-desc">写下你们的纪念感言 ❤️</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ========================================
+     🟣 PAGE 4: GALLERY PAGE
+     tab 的 data-category 要和 script.js 里 galleryData 的 key 对应。
+======================================== -->
+<section id="gallery" class="page">
+    <div class="light gallery-light1"></div>
+    <div class="light gallery-light2"></div>
+    <div class="light gallery-light3"></div>
+    <div class="stars" id="gallery-stars"></div>
+    <div class="gallery-container">
+
+        <h1 class="gallery-title">回忆相册</h1>
+        <p class="gallery-subtitle">记录我们的每一刻</p>
+
+        <div class="gallery-tabs">
+            <button class="tab-btn active" data-category="2024-01">Month 1 🌊</button>
+            <button class="tab-btn" data-category="2024-02">Month 2 💝</button>
+        </div>
+
+        <div style="text-align:center;margin-bottom:18px;">
+            <button class="gallery-add-toggle" type="button" onclick="galleryToggleAddForm()">＋ 添加照片</button>
+        </div>
+
+        <div class="gallery-add-form hidden" id="gallery-add-form">
+            <input type="file" accept="image/*" id="gallery-add-file">
+            <input type="date" id="gallery-add-date" title="拍摄日期">
+            <input type="text" id="gallery-add-caption" placeholder="写点这张照片的故事...">
+            <button type="button" class="gallery-add-submit" onclick="galleryAddPhoto()">添加 💕</button>
+        </div>
+
+        <div class="gallery-grid" id="gallery-grid">
+            <div class="gallery-placeholder"><p>点击上方 tabs 浏览照片 💕</p></div>
+        </div>
+
+        <div style="text-align:center;margin:30px 0;">
+            <button class="surprise-btn" onclick="showRandomPhoto()">Surprise Me! 🎁</button>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ========================================
+     🟠 PAGE 5: SWEET ANALYSIS PAGE
+======================================== -->
+<section id="analysis" class="page">
+    <div class="analysis-container">
+
+        <h1 class="analysis-title">甜蜜分析 💌</h1>
+        <p class="analysis-subtitle">我们爱情的趣味数据（换成你们自己的数字！）</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-number">12</div>
+                <div class="stat-label">部一起看过的电影</div>
+                <div class="stat-description">写下你们喜欢的电影类型</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💑</div>
+                <div class="stat-number">50+</div>
+                <div class="stat-label">次一起出门约会</div>
+                <div class="stat-description">写下你们最常做的约会</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✈️</div>
+                <div class="stat-number">5</div>
+                <div class="stat-label">次一起旅行</div>
+                <div class="stat-description">列出你们去过的地方</div>
+            </div>
+            <div class="stat-card stat-warning">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-number">?</div>
+                <div class="stat-label">一个有趣的小统计</div>
+                <div class="stat-description">写点好玩的数据</div>
+            </div>
+            <div class="stat-card stat-fight">
+                <div class="stat-icon">💢</div>
+                <div class="stat-number">N+</div>
+                <div class="stat-label">次吵架冷战</div>
+                <div class="stat-description">但总能和好如初</div>
+            </div>
+            <div class="stat-card stat-playful">
+                <div class="stat-icon">👊</div>
+                <div class="stat-number">∞</div>
+                <div class="stat-label">次想捏一下对方</div>
+                <div class="stat-description">因为爱所以才有情绪</div>
+            </div>
+        </div>
+
+        <div class="word-cloud-section">
+            <div class="quiz-deco-top">💬 ✨ 💬</div>
+            <h2 class="quiz-heading">我们最常说的话</h2>
+            <p class="quiz-instruction">先猜一下，再看答案 ✨</p>
+
+            <div class="quiz-options">
+                <button class="quiz-btn" onclick="revealAnswer(this)">A. 想你 🥺</button>
+                <button class="quiz-btn" onclick="revealAnswer(this)">B. 宝宝 🐣</button>
+                <button class="quiz-btn" onclick="revealAnswer(this)">C. 我爱你 💕</button>
+            </div>
+
+            <div id="word-cloud-result" class="word-cloud-result hidden">
+                <p class="answer-main">答案是：我爱你，宝宝，想你 ❤</p>
+                <p class="answer-ps">（换成你们自己最常说的话）</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ========================================
+     🟡 PAGE 6: ENERGY CHART PAGE
+======================================== -->
+<section id="energy" class="page">
+    <div class="light energy-light1"></div>
+    <div class="light energy-light2"></div>
+    <div class="light energy-light3"></div>
+    <div class="stars" id="energy-stars"></div>
+    <div class="energy-container">
+
+        <h1 class="energy-title">恋爱能量图 💓</h1>
+        <p class="energy-subtitle">我们这一年的甜蜜指数</p>
+
+        <div class="energy-deco">
+            <span class="e-deco-star">⭐</span>
+            <span class="e-deco-star">💫</span>
+            <span class="e-deco-star">✨</span>
+            <span class="e-deco-star">🌟</span>
+            <span class="e-deco-star">💫</span>
+        </div>
+
+        <div class="energy-phase" id="phase-guess">
+            <div class="phase-card">
+                <h2 class="phase-title">👀 你来猜一猜每个月的趋势</h2>
+                <p class="phase-desc">点击每个月 — 上升 📈 还是下降 📉？</p>
+
+                <div class="month-buttons" id="month-buttons"></div>
+
+                <div class="guess-canvas-wrap">
+                    <canvas id="guessCanvas" width="680" height="280"></canvas>
+                </div>
+
+                <button class="reveal-btn" id="reveal-btn" onclick="revealRealChart()" disabled>
+                    看真实的数据 ✨
+                </button>
+            </div>
+        </div>
+
+        <div class="energy-phase hidden" id="phase-real">
+
+            <div class="chart-block">
+                <div class="chart-label-tag guess-tag">💭 你的猜测</div>
+                <div class="chart-canvas-frame">
+                    <canvas id="guessCanvasFinal" width="680" height="180"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-block">
+                <div class="chart-label-tag real-tag">💛 真实数据</div>
+                <div class="chart-canvas-frame real-frame">
+                    <canvas id="realCanvas" width="680" height="180"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-block">
+                <div class="chart-label-tag future-tag">🌸 未来趋势</div>
+                <div class="chart-canvas-frame future-frame">
+                    <canvas id="futureCanvas" width="680" height="180"></canvas>
+                </div>
+            </div>
+
+            <p class="energy-message">未来的曲线，我们一起继续画 ❤️</p>
+        </div>
+
+        <div class="message-section">
+            <h3>给你的悄悄话 💌</h3>
+            <textarea id="energy-message" placeholder="写点什么给TA..."></textarea>
+            <button class="save-btn" onclick="saveMessage()">保存 💕</button>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ========================================
+     🎯 PAGE 7: QUIZ PAGE
+======================================== -->
+<section id="quiz" class="page">
+  <div class="stars" id="quiz-stars"></div>
+  <div class="quiz-inner">
+
+    <h1 class="quiz-page-title">你有多了解我 💝</h1>
+    <p class="quiz-page-subtitle">出题 · 答题</p>
+    <p class="quiz-meta-info">题库：<span id="q-count">0</span> 道题</p>
+
+    <div class="quiz-mode-tabs">
+      <button class="quiz-mode-tab" onclick="quizSwitchMode('add')" id="quiz-tab-add">✏️ 出题模式</button>
+      <button class="quiz-mode-tab active" onclick="quizSwitchMode('play')" id="quiz-tab-play">🎯 答题模式</button>
+    </div>
+
+    <div class="quiz-panel" id="quiz-panel-add">
+      <div class="quiz-add-box">
+        <div class="quiz-add-title">+ 新增一道题</div>
+
+        <label class="quiz-field-label">题目</label>
+        <textarea class="quiz-field-textarea" id="new-q-text" placeholder="例如：我最喜欢的颜色是什么？"></textarea>
+
+        <label class="quiz-field-label">四个选项</label>
+        <div class="quiz-options-grid">
+          <div class="quiz-option-row"><span class="quiz-option-label">A</span><input class="quiz-option-input" id="opt-a" placeholder="选项 A"></div>
+          <div class="quiz-option-row"><span class="quiz-option-label">B</span><input class="quiz-option-input" id="opt-b" placeholder="选项 B"></div>
+          <div class="quiz-option-row"><span class="quiz-option-label">C</span><input class="quiz-option-input" id="opt-c" placeholder="选项 C"></div>
+          <div class="quiz-option-row"><span class="quiz-option-label">D</span><input class="quiz-option-input" id="opt-d" placeholder="选项 D"></div>
+        </div>
+
+        <div class="quiz-correct-row">
+          <span class="quiz-correct-label">✅ 正确答案是：</span>
+          <select class="quiz-correct-select" id="correct-answer">
+            <option value="0">A</option>
+            <option value="1">B</option>
+            <option value="2">C</option>
+            <option value="3">D</option>
+          </select>
+        </div>
+
+        <label class="quiz-field-label">答对/答错的反应（选填）</label>
+        <input class="quiz-field-input" id="feedback-correct" placeholder="答对时说的话 😊">
+        <input class="quiz-field-input" id="feedback-wrong" placeholder="答错时说的话 🤭">
+
+        <button class="quiz-btn-add-q" onclick="quizAddQuestion()">＋ 加入题库</button>
+      </div>
+
+      <div id="quiz-q-list-container">
+        <div class="quiz-q-list-empty" id="quiz-q-list-empty">还没有额外题目 ✨</div>
+        <div class="quiz-q-list" id="quiz-q-list"></div>
+      </div>
+    </div>
+
+    <div class="quiz-panel active" id="quiz-panel-play">
+
+      <div class="quiz-no-questions" id="quiz-no-questions-msg">
+        <span class="quiz-no-q-icon">😭</span>
+        <p class="quiz-no-q-text">还没出题呢～<br>回去出题模式添加一些题目吧 ✏️</p>
+      </div>
+
+      <div class="quiz-progress-wrap" id="quiz-progress" style="display:none">
+        <div class="quiz-progress-bar-bg"><div class="quiz-progress-bar-fill" id="quiz-progress-fill" style="width:0%"></div></div>
+        <div class="quiz-progress-text" id="quiz-progress-text">0 / 0</div>
+      </div>
+
+      <div class="quiz-question-card" id="quiz-question-card" style="display:none">
+        <div class="quiz-q-badge" id="quiz-q-badge">题目 1</div>
+        <div class="quiz-question-text" id="quiz-question-text">—</div>
+        <div class="quiz-answer-options" id="quiz-answer-options"></div>
+        <div class="quiz-feedback-box" id="quiz-feedback-box"></div>
+        <button class="quiz-btn-next" id="quiz-btn-next" onclick="quizNextQuestion()">下一题 →</button>
+      </div>
+
+      <div class="quiz-result-card" id="quiz-result-card">
+        <span class="quiz-result-emoji" id="quiz-result-emoji">🎊</span>
+        <div class="quiz-result-score" id="quiz-result-score">0</div>
+        <div class="quiz-result-max" id="quiz-result-max">/ 0 题</div>
+        <div class="quiz-result-title" id="quiz-result-title">—</div>
+        <div class="quiz-result-msg" id="quiz-result-msg">—</div>
+        <div class="quiz-result-detail" id="quiz-result-detail"></div>
+        <button class="quiz-btn-retry" onclick="quizStartQuiz()">🔄 再来一次</button>
+        <button class="quiz-btn-retry" onclick="quizSwitchMode('add')">✏️ 出题模式</button>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ========================================
+     🟢 PAGE 8: WISH POOL PAGE
+======================================== -->
+<section id="wish" class="page">
+    <div class="wish-container">
+
+        <h1 class="wish-title">专属许愿池 🌙</h1>
+        <p class="wish-subtitle">给TA的 love letter ~</p>
+
+        <!-- 💌 情书 — 换成你自己的话，越真心越好 -->
+        <div class="letter-envelope">
+            <div class="envelope-flap">
+                <div class="flap-seal">💌</div>
+            </div>
+
+            <div class="love-letter">
+                <div class="letter-header-row">
+                    <span class="letter-deco">✦</span>
+                    <span class="letter-to">To My Sweetheart</span>
+                    <span class="letter-deco">✦</span>
+                </div>
+
+                <div class="letter-content">
+                    <p>亲爱的，</p>
+                    <p>这是一封给你的信。（把这封信换成你真正想对TA说的话吧。）</p>
+                    <p>还记得我们刚认识的时候，我就知道你与众不同。</p>
+                    <p>谢谢你这一路的陪伴，谢谢你选择了我。</p>
+                    <p>希望未来的每一天，我们都能像现在一样相爱。</p>
+                </div>
+
+                <div class="letter-signature">
+                    <p>永远爱你，</p>
+                    <p class="sig-name" data-profile="partnerA">Partner A</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="checklist-section">
+            <h2>下一年我们想一起做的事情 ✨</h2>
+            <div class="checklist">
+                <div class="checklist-item"><input type="checkbox" id="wish1"><label for="wish1">去旅行~ ✈️</label></div>
+                <div class="checklist-item"><input type="checkbox" id="wish2"><label for="wish2">一起做一顿饭！ 👨‍🍳</label></div>
+                <div class="checklist-item"><input type="checkbox" id="wish3"><label for="wish3">一起看日出！ 🌄</label></div>
+                <div class="checklist-item"><input type="checkbox" id="wish4"><label for="wish4">拍一套情侣写真 📸</label></div>
+                <div class="add-wish">
+                    <input type="text" id="new-wish" placeholder="加一个新愿望">
+                    <button onclick="addWish()">+ 添加</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="coupon-wrapper">
+            <h2 class="coupon-main-title">专属优惠券 🎟️</h2>
+            <p class="coupon-hint">记得用的时候写上日期 &amp; 第几次！</p>
+
+            <div class="coupon-section">
+
+                <div class="coupon coupon-calm" id="coupon-1">
+                    <div class="coupon-ribbon">限定版</div>
+                    <div class="coupon-emoji">(╯▔皿▔)╯</div>
+                    <div class="coupon-title">不生气券</div>
+                    <div class="coupon-divider"><span></span></div>
+                    <div class="coupon-details">
+                        <p>✦ 有效期：一年内</p>
+                        <p>✦ 持有人：<span data-profile="partnerB">Partner B</span></p>
+                        <p>✦ 使用次数：10次</p>
+                    </div>
+                    <button class="save-coupon-btn" onclick="saveCoupon('coupon-1','不生气券')">💾 保存为图片</button>
+                </div>
+
+                <div class="coupon coupon-love" id="coupon-2">
+                    <div class="coupon-ribbon">珍藏版</div>
+                    <div class="coupon-emoji">😘</div>
+                    <div class="coupon-title">复合券</div>
+                    <div class="coupon-divider"><span></span></div>
+                    <div class="coupon-details">
+                        <p>✦ 有效期：一年内</p>
+                        <p>✦ 持有人：<span data-profile="partnerB">Partner B</span></p>
+                        <p>✦ 使用次数：2次</p>
+                    </div>
+                    <button class="save-coupon-btn" onclick="saveCoupon('coupon-2','复合券')">💾 保存为图片</button>
+                </div>
+
+                <div class="coupon coupon-magic" id="coupon-3">
+                    <div class="coupon-ribbon">超级版</div>
+                    <div class="coupon-emoji">⚡</div>
+                    <div class="coupon-title">万能券</div>
+                    <div class="coupon-divider"><span></span></div>
+                    <div class="coupon-details">
+                        <p>✦ 有效期：一年内</p>
+                        <p>✦ 持有人：<span data-profile="partnerB">Partner B</span></p>
+                        <p>✦ 使用次数：5次</p>
+                    </div>
+                    <button class="save-coupon-btn" onclick="saveCoupon('coupon-3','万能券')">💾 保存为图片</button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="send-hug-wrap">
+            <button class="send-hug-btn" onclick="sendHug()">💕 点击发送抱抱 💕</button>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ========================================
+     ✉️ PAGE 9: FUTURE LETTER
+======================================== -->
+<section id="future-letter" class="page">
+  <div class="stars" id="future-letter-stars"></div>
+  <div class="fl-inner">
+
+    <h1 class="fl-page-title">给未来的信 ✉️</h1>
+    <p class="fl-page-subtitle">写给未来的我们</p>
+
+    <div class="fl-countdown-bar">
+      <div class="fl-countdown-title">🔒 距离解锁还有</div>
+      <div class="fl-countdown-digits">
+        <div class="fl-cd-unit"><div class="fl-cd-num" id="fl-cd-days">---</div><div class="fl-cd-label">天</div></div>
+        <div class="fl-cd-unit"><div class="fl-cd-num" id="fl-cd-hours">--</div><div class="fl-cd-label">时</div></div>
+        <div class="fl-cd-unit"><div class="fl-cd-num" id="fl-cd-minutes">--</div><div class="fl-cd-label">分</div></div>
+        <div class="fl-cd-unit"><div class="fl-cd-num" id="fl-cd-seconds">--</div><div class="fl-cd-label">秒</div></div>
+      </div>
+    </div>
+
+    <div class="fl-envelope-row">
+
+      <div class="fl-envelope-card">
+        <span class="fl-env-icon">💌</span>
+        <div class="fl-env-from">Partner A 写给 Partner B</div>
+        <div class="fl-env-to">To: <span data-profile="partnerB">Partner B</span></div>
+        <span class="fl-env-status fl-locked" id="fl-status-a">🔒 下个周年解锁</span>
+        <div class="fl-env-actions">
+          <button class="fl-btn-write" onclick="flOpenWrite('a')">✏️ 写信</button>
+          <button class="fl-btn-read" id="fl-read-a" onclick="flOpenRead('a')" disabled>📖 读信</button>
+        </div>
+      </div>
+
+      <div class="fl-envelope-card">
+        <span class="fl-env-icon">💌</span>
+        <div class="fl-env-from">Partner B 写给 Partner A</div>
+        <div class="fl-env-to">To: <span data-profile="partnerA">Partner A</span></div>
+        <span class="fl-env-status fl-locked" id="fl-status-b">🔒 下个周年解锁</span>
+        <div class="fl-env-actions">
+          <button class="fl-btn-write" onclick="flOpenWrite('b')">✏️ 写信</button>
+          <button class="fl-btn-read" id="fl-read-b" onclick="flOpenRead('b')" disabled>📖 读信</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="fl-modal-overlay" id="fl-write-modal">
+      <div class="fl-modal-box">
+        <button class="fl-modal-close" onclick="flCloseModal('fl-write-modal')">✕</button>
+        <div class="fl-modal-title" id="fl-write-modal-title">写一封信</div>
+        <div class="fl-modal-subtitle">这封信会在下个周年才能打开 🔒</div>
+        <div class="fl-letter-to-label">致</div>
+        <div class="fl-letter-to-value" id="fl-write-to-display">—</div>
+        <textarea class="fl-letter-textarea" id="fl-letter-body" placeholder="亲爱的……&#10;&#10;写下你想对未来的TA说的话。"></textarea>
+        <div class="fl-unlock-date-row">
+          <span class="fl-unlock-date-label">🔒 解锁日期</span>
+          <span class="fl-unlock-date-badge">下个周年纪念日</span>
+        </div>
+        <div class="fl-modal-actions">
+          <button class="fl-btn-cancel" onclick="flCloseModal('fl-write-modal')">取消</button>
+          <button class="fl-btn-send" id="fl-send-btn" onclick="flSendLetter()">📬 封存这封信</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fl-modal-overlay" id="fl-saved-modal">
+      <div class="fl-modal-box" style="max-width:380px;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:12px;">📬</div>
+        <div class="fl-modal-title">信已封存</div>
+        <div class="fl-modal-subtitle" style="margin-bottom:18px;">等到解锁日期再打开 💌</div>
+        <div style="background:rgba(255,200,100,0.08);border:1px solid rgba(255,190,80,0.25);border-radius:14px;padding:16px 18px;font-size:0.82rem;line-height:1.7;color:rgba(255,230,170,0.85);text-align:left;margin-bottom:20px;">
+          ⚠️ 这封信存在<strong>这台设备的浏览器</strong>里<br>
+          请不要清除浏览器缓存，否则信会丢失<br>
+          也要用同一个浏览器来读信哦
+        </div>
+        <button class="fl-btn-send" onclick="flCloseModal('fl-saved-modal')" style="width:100%;">我记住了 ✓</button>
+      </div>
+    </div>
+
+    <div class="fl-modal-overlay" id="fl-read-modal">
+      <div class="fl-modal-box">
+        <button class="fl-modal-close" onclick="flCloseModal('fl-read-modal')">✕</button>
+        <div class="fl-modal-title">你的信 💌</div>
+        <div class="fl-modal-subtitle" id="fl-read-modal-subtitle">—</div>
+        <div id="fl-read-letter-content"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ========================================
+     ⚪ PAGE 10: ENDING PAGE
+======================================== -->
+<section id="ending" class="page">
+    <div class="light light1"></div>
+    <div class="light light2"></div>
+    <div class="stars" id="ending-stars"></div>
+
+    <div class="ending-container">
+        <h1 class="ending-title">Forever With You 💕</h1>
+        <p class="ending-subtitle">一起看更多日出</p>
+        <p class="ending-quote">（在这里写下你们专属的小回忆 💭）</p>
+        <p class="ending-message">Thank you for being my favorite universe ❤️</p>
+
+        <div class="moon-phase-wrap">
+            <div id="moon-phase-display" class="moon-phase-display"></div>
+            <p class="moon-phase-label">我们在一起那天的月亮</p>
+        </div>
+
+        <p class="ending-last">To be continueee ~</p>
+        <button class="nav-btn ending-back-btn" onclick="showPage('home')">← 回首页</button>
+    </div>
+</section>
+
+
+<!-- ========================================
+     🧭 GLOBAL NAVIGATION BAR
+======================================== -->
+<nav class="nav-buttons" id="global-nav">
+    <button class="nav-btn" id="nav-home"          onclick="showPage('home')">🏠 首页</button>
+    <button class="nav-btn" id="nav-story"         onclick="showPage('story')">📖 故事</button>
+    <button class="nav-btn" id="nav-gallery"       onclick="showPage('gallery')">🖼️ 相册</button>
+    <button class="nav-btn" id="nav-analysis"      onclick="showPage('analysis')">💌 分析</button>
+    <button class="nav-btn" id="nav-energy"        onclick="showPage('energy')">💓 能量</button>
+    <button class="nav-btn" id="nav-quiz"          onclick="showPage('quiz')">🎯 了解我</button>
+    <button class="nav-btn" id="nav-wish"          onclick="showPage('wish')">🌙 许愿</button>
+    <button class="nav-btn" id="nav-future-letter" onclick="showPage('future-letter')">✉️ 未来信</button>
+    <button class="nav-btn" id="nav-ending"        onclick="showPage('ending')">🌟 结尾</button>
+</nav>
+
+
+<!-- 灯箱 LIGHTBOX -->
+<div id="lightbox" class="lightbox hidden">
+    <div class="lightbox-backdrop" onclick="closeLightbox()"></div>
+    <div class="lightbox-content">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <img id="lightbox-img" src="" alt="Gallery photo">
+        <p id="lightbox-date" class="lightbox-date"></p>
+        <p id="lightbox-caption" class="lightbox-caption"></p>
+    </div>
+</div>
+
+
+<!-- 爱心 + 飘字 + 音符 容器 -->
+<div id="fx-container"></div>
+
+<!-- 共享 Toast 提示 -->
+<div id="shared-toast"></div>
+
+<!-- 背景音乐 (放你自己的 mp3 到 music/ 文件夹) -->
+<audio id="bg-music" preload="auto" loop>
+    <source src="music/background.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Firebase 是可选的（用来跨设备同步），没配置 FIREBASE_CONFIG 也不影响网站运作 -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
