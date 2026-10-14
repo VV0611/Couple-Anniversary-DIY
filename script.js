@@ -603,14 +603,17 @@ function renderGallery(category) {
       return;
     }
     grid.innerHTML = photos.map(function(p) {
-      var safeDate    = (p.date    || "").replace(/'/g,"&#39;");
-      var safeCaption = (p.caption || "").replace(/'/g,"&#39;");
+      // 相册的日期/说明文字是用户自己打的（gallery-add-caption 输入框），
+      // 插进 innerHTML 前一定要转义，不然打个 < 或 " 就能把页面结构搞坏，
+      // 甚至塞进去的 <script> 之类标签会被当成真的 HTML 执行。
+      var safeDate    = escHtml(p.date    || "");
+      var safeCaption = escHtml(p.caption || "");
       return '<div class="gallery-item">' +
              '<button class="gallery-item-delete" type="button" onclick="event.stopPropagation();galleryDeletePhoto(\'' + category + '\',\'' + p.id + '\')" title="删除">✕</button>' +
              '<div class="photo-img-wrap" onclick="openLightbox(\'' + p.url + '\',\'' + safeDate + '\',\'' + safeCaption + '\')"><img src="' + p.url + '" alt="memory" loading="lazy" onerror="this.parentElement.classList.add(\'photo-missing\')">' +
-             '<div class="photo-overlay"><p>' + (p.caption || "") + '</p></div>' +
+             '<div class="photo-overlay"><p>' + escHtml(p.caption || "") + '</p></div>' +
              '</div>' +
-             '<div class="photo-meta"><span class="photo-date">' + (p.date || "") + '</span></div>' +
+             '<div class="photo-meta"><span class="photo-date">' + escHtml(p.date || "") + '</span></div>' +
              '</div>';
     }).join("");
   });
@@ -860,8 +863,10 @@ function renderWishes() {
   _wishItems.forEach(function(w) {
     var item = document.createElement("div");
     item.className = "checklist-item";
+    // w.text 是用户在 wishlist 输入框打的自由文字，插进 innerHTML 前要转义，
+    // 不然打个 < 或 " 之类字符会把页面结构搞坏（跟相册说明文字同一类问题）。
     item.innerHTML = '<input type="checkbox" id="' + w.id + '"' + (w.checked ? ' checked' : '') + '>'
-      + '<label for="' + w.id + '">' + w.text + '</label>';
+      + '<label for="' + w.id + '">' + escHtml(w.text) + '</label>';
     checklist.insertBefore(item, addWishDiv);
     item.querySelector("input").addEventListener("change", function(e) {
       w.checked = e.target.checked;
@@ -914,9 +919,9 @@ function saveCoupon(couponId,name) {
   var W=420,H=250,canvas=document.createElement("canvas");
   canvas.width=W; canvas.height=H; var ctx=canvas.getContext("2d");
   var themes={
-    "coupon-1":{bg1:"#3d1a0a",bg2:"#6b2d1a",border:"#d4843a",emoji:"(╯˔皏˔)╯",ribbon:"限定版"},
-    "coupon-2":{bg1:"#2d0a2e",bg2:"#5c1461",border:"#e090e0",emoji:"😘",ribbon:"珍藏版"},
-    "coupon-3":{bg1:"#0a2540",bg2:"#0a3d4a",border:"#80d4c8",emoji:"⚡",ribbon:"超级版"},
+    "coupon-1":{bg1:"#3d1a0a",bg2:"#6b2d1a",border:"#d4843a",emoji:"(╯˔皏˔)╯",ribbon:"限定版",uses:"10次"},
+    "coupon-2":{bg1:"#2d0a2e",bg2:"#5c1461",border:"#e090e0",emoji:"😘",ribbon:"珍藏版",uses:"2次"},
+    "coupon-3":{bg1:"#0a2540",bg2:"#0a3d4a",border:"#80d4c8",emoji:"⚡",ribbon:"超级版",uses:"5次"},
   };
   var t=themes[couponId]||themes["coupon-1"];
   var g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,t.bg1); g.addColorStop(1,t.bg2);
@@ -929,7 +934,7 @@ function saveCoupon(couponId,name) {
   ctx.setLineDash([5,4]); ctx.strokeStyle=t.border+"55"; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(16,120); ctx.lineTo(W-16,120); ctx.stroke(); ctx.setLineDash([]);
   ctx.fillStyle="rgba(255,230,210,0.85)"; ctx.font="14px sans-serif";
-  ["有效期：一年内","持有人：" + profile.partnerB,"使用次数：10次"].forEach(function(t2,i){ ctx.fillText(t2,W/2,148+i*22); });
+  ["有效期：一年内","持有人：" + profile.partnerB,"使用次数：" + t.uses].forEach(function(t2,i){ ctx.fillText(t2,W/2,148+i*22); });
   ctx.fillStyle="rgba(255,255,255,0.1)"; ctx.font="11px sans-serif"; ctx.fillText("Love Universe ❤️",W/2,H-9);
   var a=document.createElement("a"); a.download=name+".png"; a.href=canvas.toDataURL("image/png"); a.click();
 }
@@ -1073,7 +1078,6 @@ window.addEventListener("load", function() {
   var rb=document.getElementById("refresh-message-btn"); if(rb) rb.addEventListener("click",displayRandomMessage);
   setupGalleryTabs(); renderGallery("2024-01");
   setupPhotoUploads(); setupDateInputs(); setupEditableTexts();
-  setInterval(floatMusicNotes, 900);
   var msgEl=document.getElementById("energy-message");
   if(msgEl){
     var bakedMsg = function(){ var s=localStorage.getItem("energy-message")||bakedGet("energyMessage",""); if(s) msgEl.value=s; };
@@ -1136,7 +1140,7 @@ var QUIZ_BASE_QUESTIONS = [
     fbCorrect:"对，就是这个！", fbWrong:"不对不对，再猜猜" },
   { text:"我们第一次见面是在哪里？", opts:["学校","咖啡厅","朋友聚会","网上"], correct:0,
     fbCorrect:"没错，就是那次！", fbWrong:"再想想是在哪里认识的" },
-  { text:"我们两个第一次聊天是什么时候？", opts:["自行填写","自行填写","自行填写","自行填写"], correct:0,
+  { text:"我们两个第一次聊天是什么时候？", opts:["自行回答","自行回答","自行回答","自行回答"], correct:0,
     fbCorrect:"答对了！", fbWrong:"再想想～" },
   { text:"我最喜欢叫你什么昵称？", opts:["宝宝","亲爱的","名字","自定义"], correct:0,
     fbCorrect:"嘻嘻就是这个！", fbWrong:"不对哦～" },
@@ -1698,11 +1702,13 @@ function exportFinalSite() {
 
     var zip = new JSZipLib();
 
-    // 在导出版的 index.html 里，让 script.js 读取之前多插一个 data.js，
-    // 里面是 window.BAKED_DATA —— 这样任何人打开都能看到调好的内容。
+    // 在导出版的 index.html 里插一个 data.js（window.BAKED_DATA）。
+    // 要插在最前面那段密码门 <script> 之前（不是插在最下面的 script.js 前面），
+    // 因为密码门那段内联脚本执行得很早，必须先读到 BAKED_DATA.profile.password
+    // 才能在新访客的浏览器上正确显示/跳过密码门。
     var patchedHtml = htmlText.indexOf('<script src="data.js">') !== -1
       ? htmlText
-      : htmlText.replace('<script src="script.js"></script>', '<script src="data.js"></script>\n<script src="script.js"></script>');
+      : htmlText.replace('</style>\n\n<script>', '</style>\n\n<script src="data.js"></script>\n<script>');
 
     zip.file("index.html", patchedHtml);
     zip.file("style.css", cssText);

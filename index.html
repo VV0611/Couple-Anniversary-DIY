@@ -93,6 +93,11 @@
 
     var profile = {};
     try { profile = JSON.parse(localStorage.getItem('love_profile') || '{}'); } catch (e) {}
+    // 这台浏览器还没存过 profile 的话（比如对方第一次打开「导出最终版网站」导出的链接），
+    // 退回去看 data.js 里烤进去的密码 —— data.js 必须在这段 <script> 之前加载才有用。
+    if (!profile.password && window.BAKED_DATA && window.BAKED_DATA.profile) {
+      profile = window.BAKED_DATA.profile;
+    }
     var CORRECT = profile.password || '';
 
     // 没设置密码 → 不显示密码门
