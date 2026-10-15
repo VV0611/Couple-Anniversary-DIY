@@ -384,7 +384,16 @@ body:has(#ending.active)  .nav-buttons { display:none !important; }
 .timeline-dot { position:absolute;top:18px;left:14px;transform:none;width:16px;height:16px;border-radius:50%;border:2px solid rgba(240,169,135,0.7);background:radial-gradient(circle,#F5C9A8,#F0A987);box-shadow:0 0 8px rgba(240,169,135,0.35);animation:dotPulse 3s ease-in-out infinite; }
 .dot-star { width:22px;height:22px;top:14px;left:12px;background:radial-gradient(circle,#F2B3C6,#E77A9C);border:2px solid rgba(231,122,156,0.8);box-shadow:0 0 10px rgba(231,122,156,0.4); }
 
-.timeline-content { display:grid; grid-template-columns:auto 1fr; column-gap:14px; row-gap:8px; align-items:start; padding:16px 18px; border-radius:14px; background:#241631; border:1px solid #3A2540; backdrop-filter:blur(12px); transition:transform 0.35s,box-shadow 0.35s,border-color 0.35s; }
+.timeline-content { position:relative; display:grid; grid-template-columns:auto 1fr; column-gap:14px; row-gap:8px; align-items:start; padding:16px 18px; border-radius:14px; background:#241631; border:1px solid #3A2540; backdrop-filter:blur(12px); transition:transform 0.35s,box-shadow 0.35s,border-color 0.35s; }
+/* 用户自己加的故事条目才有的删除按钮（默认 5 条没有，不能被删） */
+.story-delete-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  width: 24px; height: 24px; border-radius: 50%; border: none;
+  background: rgba(20,10,30,0.72); color: #fff7fc; font-size: 0.75rem;
+  cursor: pointer; opacity: 0; transition: 0.2s; line-height: 24px; text-align: center; padding: 0;
+}
+.timeline-content:hover .story-delete-btn { opacity: 1; }
+.story-delete-btn:hover { background: rgba(255,90,120,0.85); }
 .timeline-content:hover { transform:translateY(-4px); border-color:#533656; box-shadow:0 8px 28px rgba(18,10,26,0.5); }
 .timeline-item .timeline-content { background:#241631; border-color:#3A2540; }
 .tl-highlight   { background:#2C1B33 !important; border-color:#533656 !important; }
@@ -426,6 +435,11 @@ body:has(#ending.active)  .nav-buttons { display:none !important; }
   color:#fff; border-color:rgba(255,160,200,0.55);
   box-shadow:0 4px 18px rgba(255,120,180,0.35); transform:translateY(-2px);
 }
+/* 用户自己加的月份分类才有这个删除按钮，默认的两个示例分类没有（删不掉） */
+.tab-btn-delete {
+  display:inline-block; margin-left:4px; opacity:0.55; transition:opacity 0.2s;
+}
+.tab-btn-delete:hover { opacity:1; color:#ff6a85; }
 
 .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:18px; margin-bottom:30px; }
 .gallery-placeholder { grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,190,220,0.55); }
@@ -1368,7 +1382,7 @@ body:has(#ending.active)  .nav-buttons { display:none !important; }
 ======================================== */
 .photo-upload-slot { position: relative; }
 .photo-upload-btn {
-  position: absolute; z-index: 4; bottom: 8px; right: 8px;
+  position: absolute; z-index: 6; bottom: 8px; right: 8px;
   padding: 5px 10px; font-size: 0.72rem; font-family: inherit;
   border: 1px solid rgba(255,255,255,0.3); border-radius: 999px;
   background: rgba(20,10,30,0.68); color: #fff7fc; cursor: pointer;
@@ -1378,6 +1392,30 @@ body:has(#ending.active)  .nav-buttons { display:none !important; }
 .photo-upload-slot:focus-within .photo-upload-btn { opacity: 1; transform: translateY(0); }
 .photo-upload-btn:hover { background: rgba(255,140,190,0.55); border-color: rgba(255,182,220,0.6); }
 .tl-photo-wrap.photo-upload-slot .photo-upload-btn { bottom: 6px; right: 6px; padding: 4px 8px; }
+
+/* 首页那两张照片（Memory photo / Day1）：没有小图标按钮了，直接点整张照片就能换。
+   平时看起来跟普通照片一样，hover 才提示"点这里换照片"。 */
+.click-to-upload { cursor: pointer; }
+.click-to-upload:not(.photo-missing)::after {
+  content: "📷 点击更换照片"; position: absolute; inset: 0; z-index: 4;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10,5,20,0.5); color: #fff7fc; font-size: 0.82rem; letter-spacing: 0.03em;
+  opacity: 0; transition: opacity 0.2s; border-radius: inherit; text-align: center; padding: 10px;
+}
+.click-to-upload:hover::after,
+.click-to-upload:focus-within::after { opacity: 1; }
+
+/* 上传背景音乐按钮：放在左下角，特意避开右下角唱片按钮(.vinyl-button)的位置，
+   hover 才出现（只接受 mp3，见 script.js 里的校验）。 */
+.music-upload-btn {
+  position: absolute; bottom: 6px; left: 6px;
+  z-index: 6; padding: 5px 10px; font-size: 0.72rem; font-family: inherit; white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.3); border-radius: 999px;
+  background: rgba(20,10,30,0.72); color: #fff7fc; cursor: pointer;
+  backdrop-filter: blur(4px); transition: 0.2s; opacity: 0;
+}
+.day1-wrap:hover .music-upload-btn { opacity: 1; }
+.music-upload-btn:hover { background: rgba(255,140,190,0.55); border-color: rgba(255,182,220,0.6); }
 
 .timeline-date-input {
   color-scheme: dark;
@@ -1435,6 +1473,16 @@ body:has(#ending.active)  .nav-buttons { display:none !important; }
   content: "点击上传照片"; position: absolute; left: 0; right: 0; bottom: 10px; text-align: center;
   font-size: 0.68rem; color: rgba(255,247,252,0.75); letter-spacing: 0.04em;
 }
+/* Day1 卡片底部本来就有自己的日期说明文字(.day1-label)，
+   跟上面这行"点击上传照片"会叠在一起变得很难读，这里就不重复显示了，
+   留着中间的 📷 图标提示就够了。 */
+.day1-card.photo-missing::after { content: none; }
+
+/* 可以直接点击编辑的文字（故事时间线、甜蜜分析页等）：
+   平时看起来跟普通文字一样，鼠标移上去/点进去才有虚线框提示"这里能改"。 */
+.editable-text { cursor: text; border-radius: 4px; outline: 1px dashed transparent; outline-offset: 3px; transition: background 0.2s, outline-color 0.2s; }
+.editable-text:hover { background: rgba(255,255,255,0.05); outline-color: rgba(255,182,220,0.35); }
+.editable-text:focus { background: rgba(255,255,255,0.08); outline-color: rgba(255,182,220,0.65); }
 
 /* 导出最终版网站按钮 */
 .setup-export-wrap { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }

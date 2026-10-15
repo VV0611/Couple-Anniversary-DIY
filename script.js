@@ -158,24 +158,37 @@ function watchPhotoMissing(img, wrap) {
   check();
 }
 
-function setupPhotoUploads() {
-  document.querySelectorAll(".photo-upload-slot").forEach(function (slot) {
+// scope 参数是给"动态新增的区块"用的（比如新加的故事条目）——
+// 只需要给那一小块新 DOM 接上监听器，不用把整个页面重新扫一遍、
+// 不然已经接过的元素会被重复绑定两次监听器。不传 scope 就照旧扫全页。
+function setupPhotoUploads(scope) {
+  (scope || document).querySelectorAll(".photo-upload-slot").forEach(function (slot) {
     var img   = slot.querySelector("img[data-photo-key]");
     var btn   = slot.querySelector(".photo-upload-btn");
     var input = slot.querySelector(".photo-upload-input");
-    if (!img || !btn || !input) return;
+    if (!img || !input) return;
     var key = img.getAttribute("data-photo-key");
 
     watchPhotoMissing(img, slot);
 
     loadPhotoBlob(key).then(function (blob) {
-      if (blob) img.src = URL.createObjectURL(blob);
+      if (blob) { img.src = URL.createObjectURL(blob); return; }
+      // 本机没传过这张照片 → 看看是不是「导出最终版网站」时烤进去的路径
+      // （动态新增的故事条目没有写死的默认图片路径，要靠这个才看得到）。
+      var baked = bakedGet("photos." + key, null);
+      if (baked) img.src = baked;
     });
 
-    btn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      input.click();
-    });
+    // 首页那两张照片没有小图标按钮，点整张照片就能换；
+    // 其他地方（故事时间线等）照片点下去是开灯箱大图看，所以还是留着小按钮换照片。
+    if (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        input.click();
+      });
+    } else if (slot.classList.contains("click-to-upload")) {
+      slot.addEventListener("click", function () { input.click(); });
+    }
     input.addEventListener("click", function (e) { e.stopPropagation(); });
     input.addEventListener("change", function () {
       var file = input.files && input.files[0];
@@ -188,8 +201,8 @@ function setupPhotoUploads() {
 
 // 日期输入框（故事时间线的 📅、Setup 表单等）：选完自动存 localStorage，
 // 下次打开自动填回去。
-function setupDateInputs() {
-  document.querySelectorAll(".timeline-date-input").forEach(function (el) {
+function setupDateInputs(scope) {
+  (scope || document).querySelectorAll(".timeline-date-input").forEach(function (el) {
     var dateKey = el.getAttribute("data-date-key");
     var key = "date_" + dateKey;
     var saved = localStorage.getItem(key) || bakedGet("dates." + dateKey, "");
@@ -200,10 +213,10 @@ function setupDateInputs() {
   });
 }
 
-// 故事时间线里可以直接点进去编辑的文字（contenteditable）：
+// 故事时间线、甜蜜分析页里可以直接点进去编辑的文字（contenteditable）：
 // 改完失焦(blur)会存进 localStorage，下次打开 / 导出最终版都能保留。
-function setupEditableTexts() {
-  document.querySelectorAll(".editable-text[data-edit-key]").forEach(function (el) {
+function setupEditableTexts(scope) {
+  (scope || document).querySelectorAll(".editable-text[data-edit-key]").forEach(function (el) {
     var editKey = el.getAttribute("data-edit-key");
     var key = "edit_" + editKey;
     var saved = localStorage.getItem(key);
@@ -487,6 +500,119 @@ function floatMusicNotes() {
   setTimeout(function(){ note.remove(); }, +dur*1000+200);
 }
 
+// 背景音乐也能自己上传（只接受 mp3），跟照片用同一套 IndexedDB key-value 存储，
+// 存好之后会盖掉默认的 music/background.mp3。
+var MUSIC_BLOB_KEY = "bg-music";
+
+function setupMusicUpload() {
+  var btn   = document.querySelector(".music-upload-btn");
+  var input = document.getElementById("music-upload-input");
+  if (!btn || !input || !bgMusic) return;
+
+  // 本机之前传过音乐 → 用传过的那首，不用默认的
+  loadPhotoBlob(MUSIC_BLOB_KEY).then(function (blob) {
+    if (blob) { bgMusic.src = URL.createObjectURL(blob); bgMusic.load(); }
+  });
+
+  btn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    input.click();
+  });
+  input.addEventListener("click", function (e) { e.stopPropagation(); });
+  input.addEventListener("change", function () {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var isMp3 = file.type === "audio/mpeg" || /\.mp3$/i.test(file.name);
+    if (!isMp3) {
+      showToast("🎵 只支持 mp3 格式哦，换一个文件试试～");
+      input.value = "";
+      return;
+    }
+    bgMusic.src = URL.createObjectURL(file);
+    bgMusic.load();
+    savePhotoBlob(MUSIC_BLOB_KEY, file);
+    showToast("✅ 背景音乐换好了！");
+    if (isPlaying) bgMusic.play().catch(function(){});
+  });
+}
+
+// ========================================
+// 9.5 STORY — 让用户自己点按钮加新的故事条目
+// ========================================
+// 默认的 5 条故事是写死在 index.html 里的；用户自己点「➕ 添加新的故事」
+// 加的条目是这里用 JS 动态造出来的，id 存一份清单在 localStorage，
+// 下次打开网站 / 导出最终版网站的时候，照着清单把它们重新造出来。
+var STORY_EXTRA_KEY = "story_extra_ids";
+
+function storyGetExtraIds() {
+  try {
+    var raw = localStorage.getItem(STORY_EXTRA_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return bakedGet("storyExtraIds", []);
+}
+function storySaveExtraIds(ids) {
+  localStorage.setItem(STORY_EXTRA_KEY, JSON.stringify(ids));
+}
+
+function storyBuildItemHTML(id) {
+  return '' +
+    '<div class="timeline-item" data-story-id="' + id + '">' +
+      '<div class="timeline-dot"></div>' +
+      '<div class="timeline-content">' +
+        '<button class="story-delete-btn" type="button" title="删除这段故事" onclick="storyDeleteItem(\'' + id + '\')">✕</button>' +
+        '<input type="date" class="timeline-date timeline-date-input" data-date-key="' + id + '" title="选择日期">' +
+        '<div class="tl-photo-wrap photo-upload-slot">' +
+          '<figure class="tl-photo polaroid"><img alt="故事照片" data-photo-key="story-photo-' + id + '" onclick="if(this.src)openLightbox(this.src,\'\',\'\')"></figure>' +
+          '<button class="photo-upload-btn" type="button" title="更换照片">📷</button>' +
+          '<input type="file" accept="image/*" class="photo-upload-input" hidden>' +
+        '</div>' +
+        '<div class="timeline-desc"><span class="tl-heading editable-text" contenteditable="true" data-edit-key="' + id + '-heading">💬 新的故事</span><br><span class="editable-text" contenteditable="true" data-edit-key="' + id + '-desc">点这里写下这段故事</span></div>' +
+      '</div>' +
+    '</div>';
+}
+
+// 真正把一个故事条目的 DOM 加进时间线，并只给这一小块接上监听器
+// （不是整页重新扫一遍，不然已有的条目会被重复绑定监听器）。
+function storyRenderItem(id) {
+  var container = document.getElementById("story-extra-items");
+  if (!container) return;
+  container.insertAdjacentHTML("beforeend", storyBuildItemHTML(id));
+  var el = container.querySelector('.timeline-item[data-story-id="' + id + '"]');
+  if (el) {
+    setupPhotoUploads(el);
+    setupDateInputs(el);
+    setupEditableTexts(el);
+  }
+}
+
+function storyAddItem() {
+  var ids = storyGetExtraIds();
+  var id = "story-x" + Date.now();
+  ids.push(id);
+  storySaveExtraIds(ids);
+  storyRenderItem(id);
+  showToast("✅ 新的故事条目加好了，点进去写内容吧～");
+}
+
+function storyDeleteItem(id) {
+  var ids = storyGetExtraIds().filter(function (x) { return x !== id; });
+  storySaveExtraIds(ids);
+  // 清掉这条故事相关的本地数据，避免留下孤儿数据
+  localStorage.removeItem("date_" + id);
+  localStorage.removeItem("edit_" + id + "-heading");
+  localStorage.removeItem("edit_" + id + "-desc");
+  deletePhotoBlob("story-photo-" + id);
+  var el = document.querySelector('.timeline-item[data-story-id="' + id + '"]');
+  if (el) el.remove();
+  showToast("🗑️ 已删除这段故事");
+}
+
+// 页面打开时，把之前加过的（或导出时烤进去的）故事条目重新造出来。
+function storyLoadExtraItems() {
+  storyGetExtraIds().forEach(function (id) { storyRenderItem(id); });
+}
+
 // ========================================
 // 10. GALLERY — DATA + LIGHTBOX
 // ========================================
@@ -636,12 +762,98 @@ function closeLightbox() {
 }
 document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeLightbox(); });
 
+function galleryWireTab(btn) {
+  btn.addEventListener("click", function(e) {
+    if (e.target.closest(".tab-btn-delete")) return; // 点的是删除按钮，不要切换 tab
+    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+    btn.classList.add("active"); renderGallery(btn.dataset.category);
+  });
+}
 function setupGalleryTabs() {
-  document.querySelectorAll(".tab-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
+  document.querySelectorAll(".tab-btn").forEach(galleryWireTab);
+}
+
+// ── 用户自己加的月份分类（默认只有 2024-01 / 2024-02 两个示例）──
+var GALLERY_CATEGORIES_KEY = "gallery_extra_categories";
+
+function galleryGetExtraCategories() {
+  try {
+    var raw = localStorage.getItem(GALLERY_CATEGORIES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return bakedGet("galleryCategories", []);
+}
+function gallerySaveExtraCategories(cats) {
+  localStorage.setItem(GALLERY_CATEGORIES_KEY, JSON.stringify(cats));
+}
+
+function galleryToggleCategoryForm() {
+  var form = document.getElementById("gallery-add-category-form");
+  if (form) form.classList.toggle("hidden");
+}
+
+function galleryBuildTabHTML(key, label) {
+  return '<button class="tab-btn" data-category="' + key + '">' + escHtml(label) +
+    ' <span class="tab-btn-delete" title="删除这个分类" onclick="event.stopPropagation();galleryDeleteCategory(\'' + key + '\')">✕</span></button>';
+}
+
+function galleryAddCategory() {
+  var input = document.getElementById("gallery-new-category-label");
+  var label = input ? input.value.trim() : "";
+  if (!label) { showToast("✏️ 先给这个月份起个名字吧~"); return; }
+
+  var key = "custom-" + Date.now();
+  var cats = galleryGetExtraCategories();
+  cats.push({ key: key, label: label });
+  gallerySaveExtraCategories(cats);
+
+  var tabs = document.getElementById("gallery-tabs");
+  if (tabs) {
+    tabs.insertAdjacentHTML("beforeend", galleryBuildTabHTML(key, label));
+    var btn = tabs.querySelector('.tab-btn[data-category="' + key + '"]');
+    if (btn) {
+      galleryWireTab(btn);
       document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
-      btn.classList.add("active"); renderGallery(btn.dataset.category);
-    });
+      btn.classList.add("active");
+    }
+  }
+  renderGallery(key);
+
+  input.value = "";
+  galleryToggleCategoryForm();
+  showToast("✅ 新月份加好了，现在可以往里面加照片了～");
+}
+
+function galleryDeleteCategory(key) {
+  var cats = galleryGetExtraCategories().filter(function (c) { return c.key !== key; });
+  gallerySaveExtraCategories(cats);
+
+  // 清掉这个分类底下所有自己传的照片（IndexedDB 里的本体 + localStorage 的索引）
+  galleryGetCustom(key).forEach(function (item) { deletePhotoBlob(item.photoKey); });
+  localStorage.removeItem(galleryCustomKey(key));
+  localStorage.removeItem(galleryHiddenKey(key));
+
+  var tabs = document.getElementById("gallery-tabs");
+  var btn = tabs && tabs.querySelector('.tab-btn[data-category="' + key + '"]');
+  var wasActive = btn && btn.classList.contains("active");
+  if (btn) btn.remove();
+
+  if (wasActive) {
+    var firstTab = tabs && tabs.querySelector(".tab-btn");
+    if (firstTab) { firstTab.classList.add("active"); renderGallery(firstTab.dataset.category); }
+  }
+  showToast("🗑️ 已删除这个月份分类");
+}
+
+// 页面打开时，把之前加过的（或导出时烤进去的）月份分类重新造出来。
+function galleryLoadExtraCategories() {
+  var tabs = document.getElementById("gallery-tabs");
+  if (!tabs) return;
+  galleryGetExtraCategories().forEach(function (cat) {
+    if (tabs.querySelector('.tab-btn[data-category="' + cat.key + '"]')) return; // 已经有了就跳过
+    tabs.insertAdjacentHTML("beforeend", galleryBuildTabHTML(cat.key, cat.label));
+    var btn = tabs.querySelector('.tab-btn[data-category="' + cat.key + '"]');
+    if (btn) galleryWireTab(btn);
   });
 }
 function showRandomPhoto() {
@@ -1076,8 +1288,9 @@ window.addEventListener("load", function() {
   updateNextAnniversary(); setInterval(updateNextAnniversary, 60000);
   displayRandomMessage();
   var rb=document.getElementById("refresh-message-btn"); if(rb) rb.addEventListener("click",displayRandomMessage);
-  setupGalleryTabs(); renderGallery("2024-01");
-  setupPhotoUploads(); setupDateInputs(); setupEditableTexts();
+  setupGalleryTabs(); galleryLoadExtraCategories(); renderGallery("2024-01");
+  setupPhotoUploads(); setupDateInputs(); setupEditableTexts(); setupMusicUpload();
+  storyLoadExtraItems();
   var msgEl=document.getElementById("energy-message");
   if(msgEl){
     var bakedMsg = function(){ var s=localStorage.getItem("energy-message")||bakedGet("energyMessage",""); if(s) msgEl.value=s; };
@@ -1647,6 +1860,9 @@ function collectExportData() {
 
   json.gallery = {};
   json.galleryHidden = {};
+  json.galleryCategories = galleryGetExtraCategories(); // 用户自己加的月份分类
+  json.storyExtraIds = storyGetExtraIds();               // 用户自己加的故事条目
+  json.photos = {};                                      // 动态条目没有写死的默认图片路径，靠这个表查
 
   // 固定照片位（首页大图/Day1/故事5张）：从 IndexedDB 读出来的才需要打包，
   // 没上传过的保持原样（export 时会尝试原样复制现有的 images/photoN.jpg）。
@@ -1654,8 +1870,24 @@ function collectExportData() {
     return loadPhotoBlob(key).then(function (blob) { return blob ? { key: key, blob: blob } : null; });
   })).then(function (results) { return results.filter(Boolean); });
 
-  // 相册里用户自己上传的照片，按分类逐个读出来。
-  var galleryPromise = Promise.all(Object.keys(galleryData).map(function (cat) {
+  // 用户自己传过的背景音乐（mp3），有的话盖掉默认的 music/background.mp3
+  var musicPromise = loadPhotoBlob(MUSIC_BLOB_KEY);
+
+  // 用户自己点「➕ 添加新的故事」加的条目，照片要单独打包（没有默认文件可以覆盖）。
+  var storyPhotoPromise = Promise.all(json.storyExtraIds.map(function (id) {
+    var key = "story-photo-" + id;
+    return loadPhotoBlob(key).then(function (blob) {
+      if (!blob) return null;
+      var ext = blob.type && blob.type.indexOf("png") !== -1 ? "png" : "jpg";
+      var filename = "story-extra-" + id + "." + ext;
+      json.photos[key] = "images/" + filename;
+      return { key: key, blob: blob, filename: filename };
+    });
+  })).then(function (results) { return results.filter(Boolean); });
+
+  // 相册里用户自己上传的照片，按分类逐个读出来（默认 2 个分类 + 自己加的所有分类）。
+  var allCategories = Object.keys(galleryData).concat(json.galleryCategories.map(function (c) { return c.key; }));
+  var galleryPromise = Promise.all(allCategories.map(function (cat) {
     var hidden = galleryGetHidden(cat);
     if (hidden.length) json.galleryHidden[cat] = hidden;
     var custom = galleryGetCustom(cat);
@@ -1677,8 +1909,8 @@ function collectExportData() {
     return [].concat.apply([], perCategory);
   });
 
-  return Promise.all([fixedPromise, galleryPromise]).then(function (res) {
-    return { json: json, fixedPhotos: res[0], galleryFiles: res[1] };
+  return Promise.all([fixedPromise, storyPhotoPromise, galleryPromise, musicPromise]).then(function (res) {
+    return { json: json, fixedPhotos: res[0], storyPhotos: res[1], galleryFiles: res[2], musicBlob: res[3] };
   });
 }
 
@@ -1727,6 +1959,12 @@ function exportFinalSite() {
     data.fixedPhotos.forEach(function (p) {
       imagesFolder.file(FIXED_PHOTO_FILENAMES[p.key], p.blob);
     });
+    // 用户自己加的故事条目的照片（没有默认文件，路径是 data.js 里 photos 表指定的）
+    data.storyPhotos.forEach(function (p) {
+      imagesFolder.file(p.filename, p.blob);
+    });
+    // 用户自己传过的背景音乐，盖掉默认的 music/background.mp3
+    if (data.musicBlob) zip.folder("music").file("background.mp3", data.musicBlob);
     var galleryFolder = imagesFolder.folder("gallery");
     data.galleryFiles.forEach(function (f) {
       galleryFolder.file(f.filename, f.blob);

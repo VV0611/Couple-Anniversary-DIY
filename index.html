@@ -232,20 +232,21 @@
         <section class="home-media">
             <div class="photo-card">
                 <div class="hero-main-photo">
-                    <figure class="hero-photo-card photo-upload-slot">
+                    <!-- 首页这两张照片不用小图标按钮了，直接点照片本身就能换 -->
+                    <figure class="hero-photo-card photo-upload-slot click-to-upload" title="点击更换照片">
                         <img src="images/photo1.jpg" class="main-photo" alt="Memory photo 1" id="hero-photo-1" data-photo-key="hero-photo-1">
-                        <button class="photo-upload-btn" type="button" title="更换照片">📷 换照片</button>
                         <input type="file" accept="image/*" class="photo-upload-input" hidden>
                     </figure>
                 </div>
                 <div class="day1-wrap">
-                    <figure class="day1-card photo-upload-slot">
+                    <figure class="day1-card photo-upload-slot click-to-upload" title="点击更换照片">
                         <img src="images/photo2.jpg" class="day1-photo" alt="Day 1" id="hero-photo-2" data-photo-key="hero-photo-2">
-                        <button class="photo-upload-btn" type="button" title="更换照片">📷</button>
                         <input type="file" accept="image/*" class="photo-upload-input" hidden>
                         <div class="day1-label">Day 1 ✦ replace with your date</div>
                     </figure>
                     <button class="vinyl-button" id="play-music-btn" type="button" aria-label="Play music"></button>
+                    <button class="music-upload-btn" type="button" title="上传背景音乐（只支持 mp3）">🎵 换音乐</button>
+                    <input type="file" accept="audio/mpeg,.mp3" id="music-upload-input" hidden>
                 </div>
             </div>
         </section>
@@ -382,6 +383,13 @@
                 </div>
             </div>
 
+            <!-- 用户自己点「➕ 添加新的故事」加的条目，由 script.js 动态插入这里 -->
+            <div id="story-extra-items"></div>
+
+        </div>
+
+        <div style="text-align:center;margin-top:28px;">
+            <button class="gallery-add-toggle" type="button" onclick="storyAddItem()">➕ 添加新的故事</button>
         </div>
     </div>
 </section>
@@ -401,13 +409,14 @@
         <h1 class="gallery-title">回忆相册</h1>
         <p class="gallery-subtitle">记录我们的每一刻</p>
 
-        <div class="gallery-tabs">
+        <div class="gallery-tabs" id="gallery-tabs">
             <button class="tab-btn active" data-category="2024-01">Month 1 🌊</button>
             <button class="tab-btn" data-category="2024-02">Month 2 💝</button>
         </div>
 
-        <div style="text-align:center;margin-bottom:18px;">
+        <div style="text-align:center;margin-bottom:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="gallery-add-toggle" type="button" onclick="galleryToggleAddForm()">＋ 添加照片</button>
+            <button class="gallery-add-toggle" type="button" onclick="galleryToggleCategoryForm()">➕ 添加新月份</button>
         </div>
 
         <div class="gallery-add-form hidden" id="gallery-add-form">
@@ -415,6 +424,11 @@
             <input type="date" id="gallery-add-date" title="拍摄日期">
             <input type="text" id="gallery-add-caption" placeholder="写点这张照片的故事...">
             <button type="button" class="gallery-add-submit" onclick="galleryAddPhoto()">添加 💕</button>
+        </div>
+
+        <div class="gallery-add-form hidden" id="gallery-add-category-form">
+            <input type="text" id="gallery-new-category-label" placeholder="给这个月份起个名字，比如 Month 3 💍">
+            <button type="button" class="gallery-add-submit" onclick="galleryAddCategory()">创建 ✨</button>
         </div>
 
         <div class="gallery-grid" id="gallery-grid">
@@ -435,62 +449,62 @@
 <section id="analysis" class="page">
     <div class="analysis-container">
 
-        <h1 class="analysis-title">甜蜜分析 💌</h1>
-        <p class="analysis-subtitle">我们爱情的趣味数据（换成你们自己的数字！）</p>
+        <h1 class="analysis-title editable-text" contenteditable="true" data-edit-key="analysis-title">甜蜜分析 💌</h1>
+        <p class="analysis-subtitle editable-text" contenteditable="true" data-edit-key="analysis-subtitle">我们爱情的趣味数据（换成你们自己的数字！）</p>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">🎬</div>
-                <div class="stat-number">12</div>
-                <div class="stat-label">部一起看过的电影</div>
-                <div class="stat-description">写下你们喜欢的电影类型</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat1-icon">🎬</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat1-number">12</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat1-label">部一起看过的电影</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat1-desc">写下你们喜欢的电影类型</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">💑</div>
-                <div class="stat-number">50+</div>
-                <div class="stat-label">次一起出门约会</div>
-                <div class="stat-description">写下你们最常做的约会</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat2-icon">💑</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat2-number">50+</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat2-label">次一起出门约会</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat2-desc">写下你们最常做的约会</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">✈️</div>
-                <div class="stat-number">5</div>
-                <div class="stat-label">次一起旅行</div>
-                <div class="stat-description">列出你们去过的地方</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat3-icon">✈️</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat3-number">5</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat3-label">次一起旅行</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat3-desc">列出你们去过的地方</div>
             </div>
             <div class="stat-card stat-warning">
-                <div class="stat-icon">🚨</div>
-                <div class="stat-number">?</div>
-                <div class="stat-label">一个有趣的小统计</div>
-                <div class="stat-description">写点好玩的数据</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat4-icon">🚨</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat4-number">?</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat4-label">一个有趣的小统计</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat4-desc">写点好玩的数据</div>
             </div>
             <div class="stat-card stat-fight">
-                <div class="stat-icon">💢</div>
-                <div class="stat-number">N+</div>
-                <div class="stat-label">次吵架冷战</div>
-                <div class="stat-description">但总能和好如初</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat5-icon">💢</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat5-number">N+</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat5-label">次吵架冷战</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat5-desc">但总能和好如初</div>
             </div>
             <div class="stat-card stat-playful">
-                <div class="stat-icon">👊</div>
-                <div class="stat-number">∞</div>
-                <div class="stat-label">次想捏一下对方</div>
-                <div class="stat-description">因为爱所以才有情绪</div>
+                <div class="stat-icon editable-text" contenteditable="true" data-edit-key="stat6-icon">👊</div>
+                <div class="stat-number editable-text" contenteditable="true" data-edit-key="stat6-number">∞</div>
+                <div class="stat-label editable-text" contenteditable="true" data-edit-key="stat6-label">次想捏一下对方</div>
+                <div class="stat-description editable-text" contenteditable="true" data-edit-key="stat6-desc">因为爱所以才有情绪</div>
             </div>
         </div>
 
         <div class="word-cloud-section">
             <div class="quiz-deco-top">💬 ✨ 💬</div>
-            <h2 class="quiz-heading">我们最常说的话</h2>
-            <p class="quiz-instruction">先猜一下，再看答案 ✨</p>
+            <h2 class="quiz-heading editable-text" contenteditable="true" data-edit-key="wordcloud-heading">我们最常说的话</h2>
+            <p class="quiz-instruction editable-text" contenteditable="true" data-edit-key="wordcloud-instruction">先猜一下，再看答案 ✨</p>
 
             <div class="quiz-options">
-                <button class="quiz-btn" onclick="revealAnswer(this)">A. 想你 🥺</button>
-                <button class="quiz-btn" onclick="revealAnswer(this)">B. 宝宝 🐣</button>
-                <button class="quiz-btn" onclick="revealAnswer(this)">C. 我爱你 💕</button>
+                <button class="quiz-btn" onclick="revealAnswer(this)">A. <span class="editable-text" contenteditable="true" data-edit-key="wordcloud-opt-a" onclick="event.stopPropagation()">想你 🥺</span></button>
+                <button class="quiz-btn" onclick="revealAnswer(this)">B. <span class="editable-text" contenteditable="true" data-edit-key="wordcloud-opt-b" onclick="event.stopPropagation()">宝宝 🐣</span></button>
+                <button class="quiz-btn" onclick="revealAnswer(this)">C. <span class="editable-text" contenteditable="true" data-edit-key="wordcloud-opt-c" onclick="event.stopPropagation()">我爱你 💕</span></button>
             </div>
 
             <div id="word-cloud-result" class="word-cloud-result hidden">
-                <p class="answer-main">答案是：我爱你，宝宝，想你 ❤</p>
-                <p class="answer-ps">（换成你们自己最常说的话）</p>
+                <p class="answer-main editable-text" contenteditable="true" data-edit-key="wordcloud-answer-main">答案是：我爱你，宝宝，想你 ❤</p>
+                <p class="answer-ps editable-text" contenteditable="true" data-edit-key="wordcloud-answer-ps">（换成你们自己最常说的话）</p>
             </div>
         </div>
 
